@@ -1,0 +1,48 @@
+---
+import Player from '../../components/Player.svelte'
+import MainLayout from '../../layouts/MainLayout.astro';
+
+export async function getStaticPaths({rss}) {
+  const res = await fetch('https://syntax.fm/api/shows')
+  const shows = await res.json()
+  const paths = shows.map(show => {
+    return {
+      params: {
+        number: show.number.toString(),
+      },
+    }
+  })
+  rss({
+    title: 'Syntax.fm',
+    description: 'Syntax.fm is a podcast about programming, software development, and the web.',
+    customData: '<language>en-us</language>',
+    feed_url: 'https://syntax.fm/rss',
+    site_url: 'https://syntax.fm',
+    image_url: 'https://syntax.fm/images/syntaxfm-logo.png',
+    docs: 'https://syntax.fm/rss',
+    items: shows.map(show => {
+      return {
+        title: show.title,
+        description: show.description,
+        link: show.url,
+        date: show.date
+      }
+    }),
+    dest: '/feed.xml'
+  })
+  return paths
+};
+
+const { number } = Astro.request.params;
+const showRes = await fetch(`https://syntax.fm/api/shows/${number}`);
+const show = await showRes.json();
+const showAudio = show.url
+---
+  
+<MainLayout>
+  <h1>#{show.number} - {show.title}</h1>
+
+  <Player src={showAudio} client:load />
+
+  {show.html}
+</MainLayout>
